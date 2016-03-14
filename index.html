@@ -171,6 +171,7 @@
               <small>You can also use <kbd>Tab</kbd> to navigate, <kbd>A</kbd> or <kbd>space</kbd> to mark/unmark as active and <kbd>Enter</kbd> or <kbd>d</kbd> to mark/unmark done.</small>
             </div>
             <input className="bar"
+                   autoFocus
                    onChange={ this.handleChange }
                    onKeyUp={ this.handleSubmit }
                    value={ this.state.title }
