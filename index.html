@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tasker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="author" content="Leonardo K. Kewitz">
+    <meta name="description" content="SPA for planning your day.">
+
+    <link rel="stylesheet" type="text/css" href="https://raw.githubusercontent.com/dhg/Skeleton/master/css/normalize.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.js"></script>
+    <style>
+      /* Colors: #7A3476 #BB4272 #F06161*/
+      @import url(https://fonts.googleapis.com/css?family=Roboto+Condensed:400,300|Roboto:400,300|Roboto+Slab);
+      body {
+        font-family: "Roboto", sans-serif;
+        font-size: 12px;
+        margin: 0;
+        background-color: #eee;
+      }
+      a {
+        font-family: "Roboto Condensed";
+        text-decoration: none;
+        text-transform: uppercase;
+        opacity: .7;
+        transition: opacity 200ms;
+      }
+      a:hover {
+        cursor: pointer;
+        opacity: 1;
+      }
+      kbd {
+        font-family: monospace;
+        padding: 2px 4px;
+        font-size: 90%;
+        color: #fff;
+        background-color: #333;
+        border-radius: 3px;
+        -webkit-box-shadow: inset 0 -1px 0 rgba(0,0,0,.25);
+        box-shadow: inset 0 -1px 0 rgba(0,0,0,.25);
+      }
+      div, input {
+        box-sizing: border-box;
+      }
+      #app {
+        margin: 0 auto;
+      }
+      #app .clickable {
+        cursor: pointer;
+      }
+      /* Input Bar */
+      #InputBar {
+        margin-top: 5rem;
+      }
+      .placeholder {
+        font-size: 1.2rem;
+        color: #AAA;
+        margin-bottom: .5rem;
+      }
+      .placeholder small {
+        font-size: .9rem;
+      }
+      .bar {
+        width: 100%;
+        border: 0;
+        font-family: 'Roboto Slab';
+        font-size: 2rem;
+        background-color: #FFF;
+        border-bottom: 4px solid #FFF;
+        padding: 8px 8px 4px 8px;
+        box-shadow: 0 0px 0px RGBA(0, 0, 0, .1);
+        outline: 0;
+        transition: box-shadow 300ms ease, border-bottom 300ms ease;
+      }
+      .bar:focus {
+        box-shadow: 0 2px 10px RGBA(0, 0, 0, .2);
+        border-bottom: 4px solid #BB4272;
+      }
+      /* Task List */
+      #TaskList {
+        margin-top: 2rem;
+      }
+      .task {
+        position: relative;
+        margin-top: .5rem;
+        width: 100%;
+        padding: 1rem;
+        background: #FFF;
+        font-size: 1rem;
+        line-height: 24px;
+        z-index: 2;
+        transition: background 400ms ease, color 400ms ease;
+      }
+      .task:focus {
+        box-shadow: 0 2px 10px RGBA(0, 0, 0, .3);
+        outline: 0;
+      }
+      .task a {
+        line-height: inherit;
+        vertical-align: middle;
+        font-size: 80%;
+      }
+      .task.active {
+        color: #FFF;
+        background: #F06161;
+      }
+      .task.done {
+        z-index: 1;
+        background-color: #f6f6f6;
+        color: #BBB;
+      }
+      .task .right {
+        float: right;
+      }
+      .task .right a {
+        margin-left: 1rem;
+      }
+      .task .material-icons {
+        vertical-align: bottom;
+        margin-bottom: 2px;
+      }
+      .task .title {
+        margin-left: 1rem;
+      }
+      /* Let's be responsive! */
+      @media(min-width: 900px) {
+        #app {
+          max-width: 800px;
+        }
+      }
+
+      /*animation-duration: .8s;
+      animation-name: InputBarPulse;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease;*/
+      @keyframes InputBarPulse {
+        from { border-bottom: 4px solid rgba(187, 67, 114, 0.3); }
+        to { border-bottom: 4px solid #BB4272; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+    </div>
+    <!-- ES2015 JS -->
+    <script type="text/babel">
+    const InputBar = React.createClass({
+      getInitialState: function() {
+        return { title: '', createdAt: new Date, elapsed: 0, status: '' };
+      },
+      handleChange: function(e) {
+        e.preventDefault();
+        this.setState({ title: e.target.value, createdAt: new Date });
+      },
+      handleSubmit: function(e) {
+        e.preventDefault();
+        if (e.key == 'Enter' && this.state.title != '') {
+          this.props.onSubmit(this.state);
+          this.setState(this.getInitialState());
+        }
+      },
+      render: function() {
+        return (
+          <div id="InputBar">
+            <div className="placeholder">
+              Type the task title and press <kbd>Enter</kbd> to add.<br/>
+              <small>You can also use <kbd>Tab</kbd> to navigate, <kbd>A</kbd> or <kbd>space</kbd> to mark/unmark as active and <kbd>Enter</kbd> or <kbd>d</kbd> to mark/unmark done.</small>
+            </div>
+            <input className="bar"
+                   onChange={ this.handleChange }
+                   onKeyUp={ this.handleSubmit }
+                   value={ this.state.title }
+                   tabIndex="1"
+                   />
+          </div>
+        );
+      }
+    });
+
+    const Task = React.createClass({
+      render: function() {
+        const { id, title, elapsed, status } = this.props;
+        const activate = _ => this.props.onChangeStatus(id, status === '' ? 'ACTIVE' : '');
+        const done = _ => this.props.onChangeStatus(id, status === 'DONE' ? '' : 'DONE');
+        const hotKeyHandler = e => {
+          switch (e.keyCode) {
+            case 65:
+            case 32:
+              activate();
+              break;
+            case 13:
+            case 68:
+              done();
+              break;
+            default:
+              break;
+          }
+        }
+        let classes = '';
+        switch (status) {
+          case 'ACTIVE':
+            classes = 'task active';
+            break;
+          case 'DONE':
+            classes = 'task done';
+            break;
+          case '':
+          default:
+            classes = 'task';
+            break;
+        }
+        return (
+          <div
+            className={ classes }
+            id={ id }
+            tabIndex="10"
+            onKeyUp={ hotKeyHandler }
+            >
+            <i className="material-icons clickable" onClick={ activate }>
+              { status === 'ACTIVE' ? 'check_box' : 'check_box_outline_blank' }
+            </i>
+            <span className="title">{ title }</span>
+            <span className="right">
+              { 'Spent ' + Math.round(elapsed/1000/60, 10) + ' min.' }
+              <a onClick={ done }>done</a>
+            </span>
+          </div>
+        );
+      }
+    });
+
+    const TaskList = props => <div id="TaskList">{ props.children }</div>;
+
+    // App Wrapper
+    const App = React.createClass({
+      getInitialState: function() {
+        return { data: [] };
+      },
+
+      handleAdd: function(task) {
+        this.setState({ data: [...this.state.data, task] });
+      },
+      handleStatusChange: function(id, status) {
+        this.state.data[id].status = status.toUpperCase();
+        this.state.data[id].createdAt = new Date;
+        this.setState(this.state);
+      },
+      handleTick: function(){
+        let newState = this.state;
+        newState.data = newState.data.map(t => {
+          const now = new Date;
+          if(t.status === 'ACTIVE') {
+            t.elapsed += (now - t.createdAt);
+            t.createdAt = now;
+          }
+          return t;
+        });
+        this.setState(newState);
+      },
+
+      componentDidMount: function() {
+        console.log('App Mounted.');
+        setInterval(this.handleTick, 1000);
+      },
+
+      render: function() {
+        const data = this.state.data
+          .map((t, i) => ({ id: i, ...t }))
+          .sort(t => t.status == 'DONE');
+        const tasks = data
+          .map((task, i) => {
+            return (<Task key={ i } onChangeStatus={ this.handleStatusChange } {...task}/>);
+          });
+        return (
+          <div>
+            <InputBar onSubmit={ this.handleAdd }/>
+            <TaskList>
+              {tasks}
+            </TaskList>
+          </div>
+        );
+      },
+    });
+    // Render App on DOM.
+    ReactDOM.render(<App />, document.getElementById('app'));
+    </script>
+  </body>
+</html>
